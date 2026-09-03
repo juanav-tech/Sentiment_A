@@ -3,3 +3,11 @@ textblob==0.17.1
 gTTS==2.2.2
 googletrans==3.1.0a0
 
+from streamlit_lottie import st_lottie
+import json
+
+with open('graficos.json') as source
+  animation=json.load(source)
+st.lottie(animation,width= 350)
+
+
