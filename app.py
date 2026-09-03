@@ -4,29 +4,27 @@ from PIL import Image
 import streamlit as st
 from textblob import TextBlob
 
-# 1. Configuración básica de la página
+# 1. Configuración de página con layout ancho
 st.set_page_config(
-    page_title="Análisis de Sentimiento", page_icon="🎭", layout="centered"
+    page_title="Análisis de Sentimiento", page_icon="🎭", layout="wide"
 )
 
 # Inicializar Traductor
 translator = Translator()
 
 # Encabezado principal
-st.title("🎭 Análisis de Sentimiento")
+st.title("🎭 <u>Análisis de Sentimiento y Emociones</u>")
 
-# Manejo de la imagen sin pixelado (tamaño controlado mediante ancho directo)
+# Imagen superior
 try:
     image = Image.open("emoticones.jpg")
-    col_img1, col_img2, col_img3 = st.columns([1, 2, 1])
-    with col_img2:
-        st.image(image, width=300)
+    st.image(image, width=280)
 except FileNotFoundError:
     pass
 
-st.subheader("Escribe una frase para analizar tu estado de ánimo:")
+st.markdown("---")
 
-# Banco de frases de respuesta
+# Banco de frases
 FRASES_TRISTES = [
     "Ánimo, los días difíciles son solo capítulos, no toda la historia. 🌈",
     "Está bien no estar bien todo el tiempo. Tómate un respiro y sigue adelante. 💛",
@@ -49,7 +47,7 @@ FRASES_NEUTRALES = [
 
 # Barra lateral informativa
 with st.sidebar:
-    st.subheader("Información General")
+    st.markdown("### <u>Información General</u>")
     st.write("""
     **Polaridad:**
     Indica si el sentimiento es positivo, negativo o neutral (-1 a 1).
@@ -58,80 +56,101 @@ with st.sidebar:
     Mide cuánto del texto representa una opinión sobre un hecho real (0 a 1).
     """)
 
-# Entrada de texto del usuario
-text = st.text_input(
-    "Escribe por favor tu frase aquí:", placeholder="Ej: Hoy es un día triste..."
-)
+# NUEVO LAYOUT: Organización en 2 columnas paralelas
+col_izq, col_der = st.columns([1, 1], gap="large")
 
-# Botón para ejecutar el análisis
-analizar_btn = st.button("🔍 Analizar Sentimiento", use_container_width=True)
+with col_izq:
+    st.markdown("### <u>Ingresa tu mensaje:</u>")
+    text = st.text_area(
+        "Escribe la frase que deseas evaluar:",
+        placeholder="Ej: Hoy ha sido un día triste...",
+        height=130,
+    )
+    analizar_btn = st.button("🔍 Analizar Sentimiento", use_container_width=True)
 
-if analizar_btn and text:
-    # Detección directa de palabras clave en español para corregir traducciones cortas
-    palabras_tristes = [
-        "triste",
-        "mal",
-        "deprimido",
-        "llorar",
-        "horrible",
-        "fatal",
-        "solo",
-        "dolor",
-        "desanimado",
-    ]
-    palabras_felices = [
-        "feliz",
-        "bien",
-        "contento",
-        "alegre",
-        "excelente",
-        "genial",
-        "fantastico",
-        "maravilloso",
-    ]
+with col_der:
+    st.markdown("### <u>Resultado del Análisis:</u>")
 
-    try:
-        translation = translator.translate(text, src="es", dest="en")
-        trans_text = translation.text
-    except Exception:
-        trans_text = text
+    if analizar_btn and text:
+        # Detección explicita de palabras clave en español
+        palabras_tristes = [
+            "triste",
+            "mal",
+            "deprimido",
+            "llorar",
+            "horrible",
+            "fatal",
+            "solo",
+            "dolor",
+            "desanimado",
+        ]
+        palabras_felices = [
+            "feliz",
+            "bien",
+            "contento",
+            "alegre",
+            "excelente",
+            "genial",
+            "fantastico",
+            "maravilloso",
+        ]
 
-    blob = TextBlob(trans_text)
-    polarity = round(blob.sentiment.polarity, 2)
-    subjectivity = round(blob.sentiment.subjectivity, 2)
+        try:
+            translation = translator.translate(text, src="es", dest="en")
+            trans_text = translation.text
+        except Exception:
+            trans_text = text
 
-    # Ajuste manual para asegurar que palabras directas como "triste" cambien la polaridad
-    texto_lower = text.lower()
-    if any(p in texto_lower for p in palabras_tristes) and polarity >= 0:
-        polarity = -0.50
-    elif any(p in texto_lower for p in palabras_felices) and polarity <= 0:
-        polarity = 0.50
+        blob = TextBlob(trans_text)
+        polarity = round(blob.sentiment.polarity, 2)
+        subjectivity = round(blob.sentiment.subjectivity, 2)
 
-    st.write("---")
+        # Ajuste directo para palabras clave en español
+        texto_lower = text.lower()
+        if any(p in texto_lower for p in palabras_tristes) and polarity >= 0:
+            polarity = -0.50
+        elif any(p in texto_lower for p in palabras_felices) and polarity <= 0:
+            polarity = 0.50
 
-    # Muestreo de métricas numéricas mediante componentes estándar
-    col1, col2 = st.columns(2)
-    col1.metric("Polaridad", f"{polarity}")
-    col2.metric("Subjetividad", f"{subjectivity}")
+        # Muestreo de métricas numéricas
+        m1, m2 = st.columns(2)
+        m1.metric("Polaridad", f"{polarity}")
+        m2.metric("Subjetividad", f"{subjectivity}")
 
-    st.write("### Resultado del Análisis:")
+        st.write("")
 
-    # Generación de respuestas utilizando componentes 100% nativos de Streamlit
-    if polarity < 0:
-        # Estado Negativo / Triste (Cuadro rojo nativo)
-        st.error("## 😔 Sentimiento Detectado: Negativo / Triste")
-        st.error(f"**Mensaje:** {random.choice(FRASES_TRISTES)}")
+        # Lógica con EMOJIS A AMBOS LADOS y TEXTO SUBRAYADO
+        if polarity < 0:
+            emoji_izq, emoji_der = "😔💧", "🌧️😔"
+            st.error(
+                f"## {emoji_izq} <u>Sentimiento: Negativo / Triste</u> {emoji_der}"
+            )
+            st.error(
+                f"{emoji_izq} **<u>Mensaje motivacional:</u>** {random.choice(FRASES_TRISTES)} {emoji_der}"
+            )
 
-    elif polarity > 0:
-        # Estado Positivo / Feliz (Cuadro verde nativo)
-        st.success("## 😄 Sentimiento Detectado: Positivo / Feliz")
-        st.success(f"**Mensaje:** {random.choice(FRASES_FELICES)}")
-        st.balloons()
+        elif polarity > 0:
+            emoji_izq, emoji_der = "😄✨", "🎉😄"
+            st.success(
+                f"## {emoji_izq} <u>Sentimiento: Positivo / Feliz</u> {emoji_der}"
+            )
+            st.success(
+                f"{emoji_izq} **<u>Mensaje de refuerzo:</u>** {random.choice(FRASES_FELICES)} {emoji_der}"
+            )
+            st.balloons()
 
+        else:
+            emoji_izq, emoji_der = "😐🍃", "☕😐"
+            st.info(f"## {emoji_izq} <u>Sentimiento: Neutral</u> {emoji_der}")
+            st.info(
+                f"{emoji_izq} **<u>Mensaje de reflexión:</u>** {random.choice(FRASES_NEUTRALES)} {emoji_der}"
+            )
+
+    elif analizar_btn and not text:
+        st.warning(
+            "⚠️ <u>Por favor escribe una frase en el panel izquierdo antes de analizar.</u>"
+        )
     else:
-        # Estado Neutral (Cuadro azul nativo)
-        st.info("## 😐 Sentimiento Detectado: Neutral")
-        st.info(f"**Mensaje:** {random.choice(FRASES_NEUTRALES)}")
-
-elif analizar_btn and not text:
-    st.warning("Por favor escribe una frase antes de presionar el botón.")
+        st.write(
+            "⬅️ *Ingresa un texto a la izquierda y presiona el botón para ver los resultados aquí.*"
+        )
