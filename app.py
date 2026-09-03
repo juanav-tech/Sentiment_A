@@ -12,89 +12,82 @@ st.set_page_config(
 # Inicializar Traductor
 translator = Translator()
 
-# 2. CSS optimizado: Contraste de texto legible y diseño estilizado
+# 2. CSS forzado para garantizar contraste 100% legible
 st.markdown(
     """
     <style>
-    /* Fondo general */
+    /* Forzar fondo general claro */
     .stApp {
         background-color: #f8fafc;
     }
     
-    /* Tarjeta de resultado con alto contraste */
+    /* Contenedor principal del resultado */
     .mood-box {
         padding: 30px;
         border-radius: 16px;
         text-align: center;
-        margin-top: 20px;
-        margin-bottom: 20px;
-        box-shadow: 0px 4px 12px rgba(0,0,0,0.06);
+        margin-top: 25px;
+        margin-bottom: 25px;
+        box-shadow: 0px 4px 12px rgba(0,0,0,0.08);
     }
     
     .mood-icon {
         font-size: 75px;
-        margin-bottom: 10px;
+        line-height: 1;
+        margin-bottom: 15px;
     }
 
+    /* Título del resultado: Forzado a texto oscuro */
     .mood-title {
-        font-size: 24px;
-        font-weight: 800;
-        margin-bottom: 10px;
+        font-size: 24px !important;
+        font-weight: 800 !important;
+        color: #111827 !important;
+        margin-bottom: 12px !important;
     }
 
+    /* Mensaje del resultado: Forzado a texto oscuro */
     .mood-message {
-        font-size: 18px;
-        font-weight: 500;
-        line-height: 1.5;
+        font-size: 18px !important;
+        font-weight: 600 !important;
+        color: #1f2937 !important;
+        line-height: 1.5 !important;
     }
 
-    /* Botón personalizado */
+    /* Estilo del Botón */
     div.stButton > button:first-child {
-        background-color: #2563eb;
+        background-color: #2563eb !important;
         color: #ffffff !important;
-        font-size: 18px;
-        font-weight: bold;
-        border-radius: 10px;
-        padding: 12px 24px;
-        width: 100%;
-        border: none;
-        transition: all 0.3s ease;
+        font-size: 18px !important;
+        font-weight: bold !important;
+        border-radius: 10px !important;
+        padding: 12px 24px !important;
+        width: 100% !important;
+        border: none !important;
     }
     
     div.stButton > button:first-child:hover {
-        background-color: #1d4ed8;
-        transform: scale(1.01);
-    }
-
-    /* Formato para el código de requirements */
-    .req-box {
-        background-color: #1e293b;
-        color: #f8fafc;
-        padding: 15px;
-        border-radius: 8px;
-        font-family: monospace;
+        background-color: #1d4ed8 !important;
     }
     </style>
 """,
     unsafe_allow_html=True,
 )
 
-# Encabezado
+# Encabezado principal
 st.title("🎭 Análisis de Sentimiento")
 
-# Manejo de imagen escalada para evitar pixelado
+# Manejo de la imagen (escalada para evitar pixelado)
 try:
     image = Image.open("emoticones.jpg")
-    # Se limita el ancho a 350px e incluye centrado para mantener nitidez
     col_img1, col_img2, col_img3 = st.columns([1, 2, 1])
     with col_img2:
-        st.image(image, width=350)
+        st.image(image, width=320)
 except FileNotFoundError:
     pass
 
 st.subheader("Escribe una frase para analizar tu estado de ánimo:")
 
-# Banco de respuestas
+# Banco de frases de respuesta
 FRASES_TRISTES = [
     "Ánimo, los días difíciles son solo capítulos, no toda la historia. 🌈",
     "Está bien no estar bien todo el tiempo. Tómate un respiro y sigue adelante. 💛",
@@ -126,16 +119,16 @@ with st.sidebar:
     Mide cuánto del texto representa una opinión sobre un hecho real (0 a 1).
     """)
 
-# Campo de texto de entrada
+# Entrada de texto del usuario
 text = st.text_input(
     "Escribe por favor tu frase aquí:", placeholder="Ej: Hoy es un día triste..."
 )
 
-# Botón para ejecutar el análisis
+# Botón para activar el análisis
 analizar_btn = st.button("🔍 Analizar Sentimiento")
 
 if analizar_btn and text:
-    # Detección explicita de términos clave en español
+    # Corrección rápida para palabras clave explícitas en español
     palabras_tristes = [
         "triste",
         "mal",
@@ -168,7 +161,7 @@ if analizar_btn and text:
     polarity = round(blob.sentiment.polarity, 2)
     subjectivity = round(blob.sentiment.subjectivity, 2)
 
-    # Regla de corrección directa para frases cortas en español
+    # Ajuste para palabras directas en español si falla la librería de traducción
     texto_lower = text.lower()
     if any(p in texto_lower for p in palabras_tristes) and polarity >= 0:
         polarity = -0.50
@@ -177,67 +170,45 @@ if analizar_btn and text:
 
     st.write("---")
 
-    # Métricas
+    # Mostrar métricas
     col1, col2 = st.columns(2)
     col1.metric("Polaridad", f"{polarity}")
     col2.metric("Subjetividad", f"{subjectivity}")
 
-    # Definición estricta de contraste: Fondos pastel claros con texto oscuro muy legible
+    # Configuración de colores con alto contraste (Fondo claro + Borde visible + Texto muy oscuro)
     if polarity < 0:
         icono = "😔"
-        color_fondo = "#fee2e2"  # Rojo claro pastel
-        color_borde = "#f87171"
-        color_texto = "#7f1d1d"  # Rojo oscuro legibilidad 100%
+        color_fondo = "#fde8e8"  # Fondo Rojo / Rosa pastel
+        color_borde = "#f87171"  # Borde rojo
         titulo = "Sentimiento Detectado: Negativo / Triste"
         mensaje = random.choice(FRASES_TRISTES)
 
     elif polarity > 0:
         icono = "😄"
-        color_fondo = "#dcfce7"  # Verde claro pastel
-        color_borde = "#4ade80"
-        color_texto = "#14532d"  # Verde oscuro legibilidad 100%
+        color_fondo = "#def7ec"  # Fondo Verde pastel
+        color_borde = "#31c48d"  # Borde verde
         titulo = "Sentimiento Detectado: Positivo / Feliz"
         mensaje = random.choice(FRASES_FELICES)
         st.balloons()
 
     else:
         icono = "😐"
-        color_fondo = "#e0f2fe"  # Azul claro pastel
-        color_borde = "#38bdf8"
-        color_texto = "#0c4a6e"  # Azul oscuro legibilidad 100%
+        color_fondo = "#e1effe"  # Fondo Azul pastel
+        color_borde = "#76a9fa"  # Borde azul
         titulo = "Sentimiento Detectado: Neutral"
         mensaje = random.choice(FRASES_NEUTRALES)
 
-    # Tarjeta estilizada con colores corregidos
+    # Caja renderizada garantizando lectura limpia
     st.markdown(
         f"""
-        <div class="mood-box" style="background-color: {color_fondo}; border: 2px solid {color_borde};">
+        <div class="mood-box" style="background-color: {color_fondo}; border: 3px solid {color_borde};">
             <div class="mood-icon">{icono}</div>
-            <div class="mood-title" style="color: {color_texto};">{titulo}</div>
-            <div class="mood-message" style="color: {color_texto};">{mensaje}</div>
+            <div class="mood-title">{titulo}</div>
+            <div class="mood-message">{mensaje}</div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
 elif analizar_btn and not text:
-    st.warning("Por favor escribe una frase antes de analizar.")
-
-# ----------------------------------------------------
-# Requisitos del Proyecto (requirements.txt)
-# ----------------------------------------------------
-st.write("---")
-with st.expander("📄 Ver archivo requirements.txt recomendado"):
-    st.markdown(
-        "Copia y pega estas dependencias en tu archivo `requirements.txt`:"
-    )
-    st.code(
-        """
-streamlit>=1.28.0
-textblob>=0.17.1
-pandas>=2.0.0
-Pillow>=10.0.0
-googletrans==3.1.0a0
-    """,
-        language="text",
-    )
+    st.warning("Por favor escribe una frase antes de hacer clic en el botón.")
