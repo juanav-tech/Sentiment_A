@@ -1,52 +1,82 @@
 import random
-from googletrans import Translator
 import pandas as pd
 from PIL import Image
 import streamlit as st
 from textblob import TextBlob
-from streamlit_lottie import st_lottie
-import json
+from googletrans import Translator
 
-# Configuración de la página
+# 1. Configuración de la página
 st.set_page_config(
     page_title="Análisis de Sentimiento", page_icon="🎭", layout="centered"
 )
 
-# Estilos CSS personalizados para mejorar la interfaz y colores
+# Initialize Translator
+translator = Translator()
+
+# 2. Personalización visual y de colores con CSS
 st.markdown(
     """
     <style>
-    .main {
-        padding: 2rem;
+    /* Fondo principal de la aplicación */
+    .stApp {
+        background-color: #f4f6f9;
     }
-    .stAlert {
-        border-radius: 12px;
-    }
-    .metric-card {
-        background-color: #f0f2f6;
-        padding: 15px;
-        border-radius: 10px;
+    
+    /* Estilo para el contenedor de resultado con ícono */
+    .mood-box {
+        padding: 25px;
+        border-radius: 15px;
         text-align: center;
+        margin-top: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0px 4px 10px rgba(0,0,0,0.08);
+    }
+    
+    .mood-icon {
+        font-size: 80px;
+        margin-bottom: 10px;
+    }
+
+    .mood-title {
+        font-size: 26px;
+        font-weight: bold;
+    }
+
+    /* Personalización del botón */
+    div.stButton > button:first-child {
+        background-color: #4f46e5;
+        color: white;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        padding: 10px 24px;
+        width: 100%;
+        border: none;
+        transition: all 0.3s ease;
+    }
+    
+    div.stButton > button:first-child:hover {
+        background-color: #4338ca;
+        color: #ffffff;
+        transform: scale(1.01);
     }
     </style>
 """,
     unsafe_allow_html=True,
 )
 
+# Título e Imagen
 st.title("🎭 Análisis de Sentimiento")
 
-# Manejo de la imagen principal con manejo de excepción por si no existe localmente
 try:
     image = Image.open("emoticones.jpg")
     st.image(image, use_container_width=True)
 except FileNotFoundError:
     pass
 
-st.subheader("¿Cómo te sientes hoy? Escribe una frase para analizarla:")
+st.subheader("Por favor escribe en el campo de texto la frase que deseas analizar")
 
-translator = Translator()
-
-# Banco de frases de respuesta
+# Frases motivacionales y de refuerzo
 FRASES_TRISTES = [
     "Ánimo, los días difíciles son solo capítulos, no toda la historia. 🌈",
     "Está bien no estar bien todo el tiempo. Tómate un respiro y sigue adelante. 💛",
@@ -64,67 +94,115 @@ FRASES_FELICES = [
 FRASES_NEUTRALES = [
     "Un estado de calma y equilibrio siempre es un buen punto de partida. 🧘",
     "Todo en orden. ¡Que tengas un día sereno y productivo! ☕",
-    "La neutralidad trae paz mental. Disfruta la tranquilidad. 🍃",
+    "La tranquilidad de hoy es la base para un gran día mañana. 🍃",
 ]
 
+# Barra lateral
 with st.sidebar:
-    st.header("📊 Métricas")
-    st.markdown("""
-    **Polaridad:**
-    Indica si el sentimiento es positivo, negativo o neutral.
-    * Range: **-1.0** (muy negativo) a **1.0** (muy positivo).
+    st.subheader("Polaridad y Subjetividad")
+    st.write("""
+    **Polaridad:** Indica si el sentimiento expresado en el texto es positivo, negativo o neutral. 
+    Su valor oscila entre -1 (muy negativo) y 1 (muy positivo).
     
-    **Subjetividad:**
-    Mide cuánto del texto es una opinión frente a un hecho real.
-    * Range: **0.0** (objetivo) a **1.0** (subjetivo).
+    **Subjetividad:** Mide cuánto del contenido es subjetivo (opiniones, emociones) frente a objetivo (hechos). 
+    Va de 0 a 1.
     """)
 
-# Interfaz principal de entrada
-text = st.text_area(
-    "Escribe tu frase o pensamiento aquí:",
-    placeholder="Ej: Hoy ha sido un día increíble...",
-)
+# Campo de texto de entrada
+text = st.text_input("Escribe por favor tu frase aquí:", key="input_texto")
 
-if text:
+# Botón para ejecutar el análisis
+analizar_btn = st.button("🔍 Analizar Sentimiento")
+
+if analizar_btn and text:
+    # Palabras clave explícitas en español para evitar fallas en la traducción de frases muy cortas
+    palabras_tristes = [
+        "triste",
+        "mal",
+        "deprimido",
+        "llorar",
+        "horrible",
+        "fatal",
+        "solo",
+        "dolor",
+        "desanimado",
+    ]
+    palabras_felices = [
+        "feliz",
+        "bien",
+        "contento",
+        "alegre",
+        "excelente",
+        "genial",
+        "fantastico",
+        "maravilloso",
+    ]
+
+    # Intentar traducción
     try:
-        # Traducción y procesamiento de sentimiento
         translation = translator.translate(text, src="es", dest="en")
         trans_text = translation.text
-        blob = TextBlob(trans_text)
+    except Exception:
+        trans_text = text
 
-        polarity = round(blob.sentiment.polarity, 2)
-        subjectivity = round(blob.sentiment.subjectivity, 2)
+    blob = TextBlob(trans_text)
+    polarity = round(blob.sentiment.polarity, 2)
+    subjectivity = round(blob.sentiment.subjectivity, 2)
 
-        st.divider()
+    # Ajuste manual si el diccionario encuentra palabras directas en español (corrige el caso de "día triste")
+    texto_lower = text.lower()
+    if any(p in texto_lower for p in palabras_tristes) and polarity >= 0:
+        polarity = -0.50
+    elif any(p in texto_lower for p in palabras_felices) and polarity <= 0:
+        polarity = 0.50
 
-        # Mostrar métricas en columnas visuales
-        col1, col2 = st.columns(2)
-        col1.metric("Polaridad", f"{polarity}")
-        col2.metric("Subjetividad", f"{subjectivity}")
+    st.write("---")
 
-        st.write("---")
+    # Mostrar métricas visuales
+    col1, col2 = st.columns(2)
+    col1.metric("Polaridad", f"{polarity}")
+    col2.metric("Subjetividad", f"{subjectivity}")
 
-        # Lógica condicional de respuestas, colores e íconos dinámicos
-        if polarity < -0.05:
-            # Estado Triste / Negativo
-            st.error("### Estado detectado: Triste / Negativo 😔")
-            st.markdown(f"### 💡 **Mensaje para ti:**")
-            st.info(random.choice(FRASES_TRISTES))
+    # Lógica de detección, íconos y cambio de colores de fondo según sentimiento
+    if polarity < 0:
+        # TRISTE: Fondo rojo claro/rosado
+        icono = "😔"
+        color_fondo = "#ffebee"
+        color_borde = "#ef5350"
+        color_texto = "#c62828"
+        titulo = "Sentimiento Detectado: Negativo / Triste"
+        mensaje = random.choice(FRASES_TRISTES)
 
-        elif polarity > 0.05:
-            # Estado Feliz / Positivo
-            st.success("### Estado detectado: ¡Feliz / Positivo! 😄")
-            st.markdown(f"### 🌟 **Mensaje para ti:**")
-            st.balloon()  # Animación de globos para reforzar la alegría
-            st.success(random.choice(FRASES_FELICES))
+    elif polarity > 0:
+        # FELIZ: Fondo verde claro
+        icono = "😊"
+        color_fondo = "#e8f5e9"
+        color_borde = "#66bb6a"
+        color_texto = "#2e7d32"
+        titulo = "Sentimiento Detectado: Positivo / Feliz"
+        mensaje = random.choice(FRASES_FELICES)
+        st.balloons()
 
-        else:
-            # Estado Neutral
-            st.warning("### Estado detectado: Neutral 😐")
-            st.markdown(f"### 🍃 **Mensaje para ti:**")
-            st.info(random.choice(FRASES_NEUTRALES))
+    else:
+        # NEUTRAL: Fondo gris/azul claro
+        icono = "😐"
+        color_fondo = "#e3f2fd"
+        color_borde = "#42a5f5"
+        color_texto = "#1565c0"
+        titulo = "Sentimiento Detectado: Neutral"
+        mensaje = random.choice(FRASES_NEUTRALES)
 
-    except Exception as e:
-        st.error(
-            "Ocurrió un problema al traducir el texto. Por favor, intenta de nuevo."
-        )
+    # Tarjeta de resultado visual personalizada en HTML/CSS
+    st.markdown(
+        f"""
+        <div class="mood-box" style="background-color: {color_fondo}; border: 2px solid {color_borde}; color: {color_texto};">
+            <div class="mood-icon">{icono}</div>
+            <div class="mood-title">{titulo}</div>
+            <p style="font-size: 18px; margin-top: 15px;">{mensaje}</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+elif analizar_btn and not text:
+    st.warning("Por favor, escribe una frase antes de hacer clic en el botón.")
