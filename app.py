@@ -4,7 +4,7 @@ from PIL import Image
 import streamlit as st
 from textblob import TextBlob
 
-# 1. Configuración de la página
+# 1. Configuración básica de la página
 st.set_page_config(
     page_title="Análisis de Sentimiento", page_icon="🎭", layout="centered"
 )
@@ -12,76 +12,15 @@ st.set_page_config(
 # Inicializar Traductor
 translator = Translator()
 
-# 2. CSS forzado para garantizar contraste 100% legible
-st.markdown(
-    """
-    <style>
-    /* Forzar fondo general claro */
-    .stApp {
-        background-color: #f8fafc;
-    }
-    
-    /* Contenedor principal del resultado */
-    .mood-box {
-        padding: 30px;
-        border-radius: 16px;
-        text-align: center;
-        margin-top: 25px;
-        margin-bottom: 25px;
-        box-shadow: 0px 4px 12px rgba(0,0,0,0.08);
-    }
-    
-    .mood-icon {
-        font-size: 75px;
-        line-height: 1;
-        margin-bottom: 15px;
-    }
-
-    /* Título del resultado: Forzado a texto oscuro */
-    .mood-title {
-        font-size: 24px !important;
-        font-weight: 800 !important;
-        color: #111827 !important;
-        margin-bottom: 12px !important;
-    }
-
-    /* Mensaje del resultado: Forzado a texto oscuro */
-    .mood-message {
-        font-size: 18px !important;
-        font-weight: 600 !important;
-        color: #1f2937 !important;
-        line-height: 1.5 !important;
-    }
-
-    /* Estilo del Botón */
-    div.stButton > button:first-child {
-        background-color: #2563eb !important;
-        color: #ffffff !important;
-        font-size: 18px !important;
-        font-weight: bold !important;
-        border-radius: 10px !important;
-        padding: 12px 24px !important;
-        width: 100% !important;
-        border: none !important;
-    }
-    
-    div.stButton > button:first-child:hover {
-        background-color: #1d4ed8 !important;
-    }
-    </style>
-""",
-    unsafe_allow_html=True,
-)
-
 # Encabezado principal
 st.title("🎭 Análisis de Sentimiento")
 
-# Manejo de la imagen (escalada para evitar pixelado)
+# Manejo de la imagen sin pixelado (tamaño controlado mediante ancho directo)
 try:
     image = Image.open("emoticones.jpg")
     col_img1, col_img2, col_img3 = st.columns([1, 2, 1])
     with col_img2:
-        st.image(image, width=320)
+        st.image(image, width=300)
 except FileNotFoundError:
     pass
 
@@ -108,7 +47,7 @@ FRASES_NEUTRALES = [
     "La tranquilidad de hoy es la base para un gran día mañana. 🍃",
 ]
 
-# Barra lateral
+# Barra lateral informativa
 with st.sidebar:
     st.subheader("Información General")
     st.write("""
@@ -124,11 +63,11 @@ text = st.text_input(
     "Escribe por favor tu frase aquí:", placeholder="Ej: Hoy es un día triste..."
 )
 
-# Botón para activar el análisis
-analizar_btn = st.button("🔍 Analizar Sentimiento")
+# Botón para ejecutar el análisis
+analizar_btn = st.button("🔍 Analizar Sentimiento", use_container_width=True)
 
 if analizar_btn and text:
-    # Corrección rápida para palabras clave explícitas en español
+    # Detección directa de palabras clave en español para corregir traducciones cortas
     palabras_tristes = [
         "triste",
         "mal",
@@ -161,7 +100,7 @@ if analizar_btn and text:
     polarity = round(blob.sentiment.polarity, 2)
     subjectivity = round(blob.sentiment.subjectivity, 2)
 
-    # Ajuste para palabras directas en español si falla la librería de traducción
+    # Ajuste manual para asegurar que palabras directas como "triste" cambien la polaridad
     texto_lower = text.lower()
     if any(p in texto_lower for p in palabras_tristes) and polarity >= 0:
         polarity = -0.50
@@ -170,45 +109,29 @@ if analizar_btn and text:
 
     st.write("---")
 
-    # Mostrar métricas
+    # Muestreo de métricas numéricas mediante componentes estándar
     col1, col2 = st.columns(2)
     col1.metric("Polaridad", f"{polarity}")
     col2.metric("Subjetividad", f"{subjectivity}")
 
-    # Configuración de colores con alto contraste (Fondo claro + Borde visible + Texto muy oscuro)
+    st.write("### Resultado del Análisis:")
+
+    # Generación de respuestas utilizando componentes 100% nativos de Streamlit
     if polarity < 0:
-        icono = "😔"
-        color_fondo = "#fde8e8"  # Fondo Rojo / Rosa pastel
-        color_borde = "#f87171"  # Borde rojo
-        titulo = "Sentimiento Detectado: Negativo / Triste"
-        mensaje = random.choice(FRASES_TRISTES)
+        # Estado Negativo / Triste (Cuadro rojo nativo)
+        st.error("## 😔 Sentimiento Detectado: Negativo / Triste")
+        st.error(f"**Mensaje:** {random.choice(FRASES_TRISTES)}")
 
     elif polarity > 0:
-        icono = "😄"
-        color_fondo = "#def7ec"  # Fondo Verde pastel
-        color_borde = "#31c48d"  # Borde verde
-        titulo = "Sentimiento Detectado: Positivo / Feliz"
-        mensaje = random.choice(FRASES_FELICES)
+        # Estado Positivo / Feliz (Cuadro verde nativo)
+        st.success("## 😄 Sentimiento Detectado: Positivo / Feliz")
+        st.success(f"**Mensaje:** {random.choice(FRASES_FELICES)}")
         st.balloons()
 
     else:
-        icono = "😐"
-        color_fondo = "#e1effe"  # Fondo Azul pastel
-        color_borde = "#76a9fa"  # Borde azul
-        titulo = "Sentimiento Detectado: Neutral"
-        mensaje = random.choice(FRASES_NEUTRALES)
-
-    # Caja renderizada garantizando lectura limpia
-    st.markdown(
-        f"""
-        <div class="mood-box" style="background-color: {color_fondo}; border: 3px solid {color_borde};">
-            <div class="mood-icon">{icono}</div>
-            <div class="mood-title">{titulo}</div>
-            <div class="mood-message">{mensaje}</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+        # Estado Neutral (Cuadro azul nativo)
+        st.info("## 😐 Sentimiento Detectado: Neutral")
+        st.info(f"**Mensaje:** {random.choice(FRASES_NEUTRALES)}")
 
 elif analizar_btn and not text:
-    st.warning("Por favor escribe una frase antes de hacer clic en el botón.")
+    st.warning("Por favor escribe una frase antes de presionar el botón.")
