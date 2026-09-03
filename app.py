@@ -12,8 +12,8 @@ st.set_page_config(
 # Inicializar Traductor
 translator = Translator()
 
-# Encabezado principal
-st.title("🎭 <u>Análisis de Sentimiento y Emociones</u>")
+# Encabezado principal (Usando Markdown nativo)
+st.title("🎭 Análisis de Sentimiento y Emociones")
 
 # Imagen superior
 try:
@@ -47,7 +47,7 @@ FRASES_NEUTRALES = [
 
 # Barra lateral informativa
 with st.sidebar:
-    st.markdown("### <u>Información General</u>")
+    st.markdown("### Información General")
     st.write("""
     **Polaridad:**
     Indica si el sentimiento es positivo, negativo o neutral (-1 a 1).
@@ -56,11 +56,11 @@ with st.sidebar:
     Mide cuánto del texto representa una opinión sobre un hecho real (0 a 1).
     """)
 
-# NUEVO LAYOUT: Organización en 2 columnas paralelas
+# Layout en 2 columnas paralelas
 col_izq, col_der = st.columns([1, 1], gap="large")
 
 with col_izq:
-    st.markdown("### <u>Ingresa tu mensaje:</u>")
+    st.markdown("### Ingresa tu mensaje:")
     text = st.text_area(
         "Escribe la frase que deseas evaluar:",
         placeholder="Ej: Hoy ha sido un día triste...",
@@ -69,10 +69,10 @@ with col_izq:
     analizar_btn = st.button("🔍 Analizar Sentimiento", use_container_width=True)
 
 with col_der:
-    st.markdown("### <u>Resultado del Análisis:</u>")
+    st.markdown("### Resultado del Análisis:")
 
     if analizar_btn and text:
-        # Detección explicita de palabras clave en español
+        # Detección explícita de palabras clave en español
         palabras_tristes = [
             "triste",
             "mal",
@@ -119,36 +119,32 @@ with col_der:
 
         st.write("")
 
-        # Lógica con EMOJIS A AMBOS LADOS y TEXTO SUBRAYADO
+        # Lógica con EMOJIS A AMBOS LADOS (Sin HTML que rompa el texto)
         if polarity < 0:
             emoji_izq, emoji_der = "😔💧", "🌧️😔"
+            st.error(f"## {emoji_izq} Sentimiento: Negativo / Triste {emoji_der}")
             st.error(
-                f"## {emoji_izq} <u>Sentimiento: Negativo / Triste</u> {emoji_der}"
-            )
-            st.error(
-                f"{emoji_izq} **<u>Mensaje motivacional:</u>** {random.choice(FRASES_TRISTES)} {emoji_der}"
+                f"{emoji_izq} **Mensaje motivacional:** {random.choice(FRASES_TRISTES)} {emoji_der}"
             )
 
         elif polarity > 0:
             emoji_izq, emoji_der = "😄✨", "🎉😄"
+            st.success(f"## {emoji_izq} Sentimiento: Positivo / Feliz {emoji_der}")
             st.success(
-                f"## {emoji_izq} <u>Sentimiento: Positivo / Feliz</u> {emoji_der}"
-            )
-            st.success(
-                f"{emoji_izq} **<u>Mensaje de refuerzo:</u>** {random.choice(FRASES_FELICES)} {emoji_der}"
+                f"{emoji_izq} **Mensaje de refuerzo:** {random.choice(FRASES_FELICES)} {emoji_der}"
             )
             st.balloons()
 
         else:
             emoji_izq, emoji_der = "😐🍃", "☕😐"
-            st.info(f"## {emoji_izq} <u>Sentimiento: Neutral</u> {emoji_der}")
+            st.info(f"## {emoji_izq} Sentimiento: Neutral {emoji_der}")
             st.info(
-                f"{emoji_izq} **<u>Mensaje de reflexión:</u>** {random.choice(FRASES_NEUTRALES)} {emoji_der}"
+                f"{emoji_izq} **Mensaje de reflexión:** {random.choice(FRASES_NEUTRALES)} {emoji_der}"
             )
 
     elif analizar_btn and not text:
         st.warning(
-            "⚠️ <u>Por favor escribe una frase en el panel izquierdo antes de analizar.</u>"
+            "⚠️ Por favor escribe una frase en el panel izquierdo antes de analizar."
         )
     else:
         st.write(
