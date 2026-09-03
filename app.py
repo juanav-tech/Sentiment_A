@@ -4,6 +4,8 @@ import pandas as pd
 from PIL import Image
 import streamlit as st
 from textblob import TextBlob
+from streamlit_lottie import st_lottie
+import json
 
 # Configuración de la página
 st.set_page_config(
